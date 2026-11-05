@@ -83,8 +83,8 @@ docker volume inspect networkwatch-kilo-config >/dev/null 2>&1 || docker volume 
 openshell sandbox create \
   --name "$SANDBOX" \
   --from networkwatch-kilo:dev \
-  --cpu 2 \
-  --memory 4Gi \
+  --cpu 3 \
+  --memory 6Gi \
   --policy "$POLICY_FILE" \
   --env XDG_DATA_HOME=/sandbox/NetworkWatch/.local/share \
   --env XDG_STATE_HOME=/sandbox/NetworkWatch/.local/state \
