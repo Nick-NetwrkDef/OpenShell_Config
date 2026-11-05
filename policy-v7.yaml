@@ -1,0 +1,131 @@
+version: 1
+filesystem_policy:
+  include_workdir: true
+  read_only:
+    - /bin
+    - /usr
+    - /lib
+    - /proc
+    - /dev/urandom
+    - /etc
+    - /var/log
+  read_write:
+    - /tmp
+    - /dev/null
+landlock:
+  compatibility: best_effort
+network_policies:
+  cloudflare_docs:
+    name: cloudflare_docs
+    endpoints:
+      - host: developers.cloudflare.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: read-only
+    binaries:
+      - path: /usr/lib/node_modules/@kilocode/cli/bin/.kilo
+  codex_auth:
+    name: codex_auth
+    endpoints:
+      - host: auth.openai.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: read-write
+    binaries:
+      - path: /usr/lib/node_modules/@kilocode/cli/bin/.kilo
+  codex_models:
+    name: codex_models
+    endpoints:
+      - host: chatgpt.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: read-write
+    binaries:
+      - path: /usr/lib/node_modules/@kilocode/cli/bin/.kilo
+  github_repository_api:
+    name: github-repository-api
+    endpoints:
+      - host: api.github.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        rules:
+          - allow:
+              method: "*"
+              path: /repos/Nick-NetwrkDef/NetworkWatch/**
+    binaries:
+      - path: /usr/bin/gh
+      - path: /usr/local/bin/gh
+  github_repository_push:
+    name: github-repository-push
+    endpoints:
+      - host: github.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        rules:
+          - allow:
+              method: GET
+              path: /Nick-NetwrkDef/NetworkWatch.git/info/refs*
+          - allow:
+              method: POST
+              path: /Nick-NetwrkDef/NetworkWatch.git/git-upload-pack
+          - allow:
+              method: POST
+              path: /Nick-NetwrkDef/NetworkWatch.git/git-receive-pack
+    binaries:
+      - path: /usr/bin/git
+      - path: /usr/local/bin/git
+  kilo_connectivity_probe:
+    name: kilo_connectivity_probe
+    endpoints:
+      - host: example.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: read-only
+    binaries:
+      - path: /usr/lib/node_modules/@kilocode/cli/bin/.kilo
+  npm_registry:
+    name: npm_registry
+    endpoints:
+      - host: registry.npmjs.org
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: read-only
+    binaries:
+      - path: /usr/bin/node
+  pypi:
+    name: pypi
+    endpoints:
+      - host: pypi.org
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: read-only
+    binaries:
+      - path: /usr/bin/python3.12
+  pythonhosted:
+    name: pythonhosted
+    endpoints:
+      - host: files.pythonhosted.org
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: read-only
+    binaries:
+      - path: /usr/bin/python3.12
+  tailscale_docs:
+    name: tailscale_docs
+    endpoints:
+      - host: tailscale.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: read-only
+    binaries:
+      - path: /usr/lib/node_modules/@kilocode/cli/bin/.kilo

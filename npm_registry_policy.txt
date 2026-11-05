@@ -1,0 +1,11 @@
+openshell policy update networkwatch-kilo \
+  --rule-name npm_registry \
+  --binary /usr/bin/node \
+  --add-endpoint registry.npmjs.org:443:read-only:rest:enforce \
+  --wait
+
+Install necessary components
+
+openshell policy update networkwatch-kilo \
+  --remove-rule npm_registry \
+  --wait
