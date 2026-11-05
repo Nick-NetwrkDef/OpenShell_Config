@@ -143,7 +143,10 @@ The current policy scopes GitHub repository API and Git transport access to **Ni
 From the host:
 
 ~~~bash
-openshell sandbox connect "$SANDBOX"
+openshell sandbox exec \
+  -n networkwatch-kilo-7 \
+  --tty \
+  -- /bin/bash -l
 ~~~
 
 Now **inside the sandbox**, verify the user, paths, CLI, and writable mounts:
