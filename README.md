@@ -40,8 +40,8 @@ openshell provider list
 Clone or update this private configuration repository on the **host**, using the host's authorized GitHub credentials:
 
 ~~~bash
-git clone https://github.com/Nick-NetwrkDef/OpenShell_Config.git "$HOME/OpenShell_Config"
-cd "$HOME/OpenShell_Config"
+git clone https://github.com/Nick-NetwrkDef/openshell-kilo.git "$HOME/openshell-kilo"
+cd "$HOME/openshell-kilo"
 ~~~
 
 If already cloned, use git pull instead of cloning a second copy. Review Dockerfile and policy-v7.yaml before building or applying them.
@@ -51,7 +51,7 @@ If already cloned, use git pull instead of cloning a second copy. Review Dockerf
 Build the Dockerfile with a local image tag. A new build is needed after changing installed packages; an existing sandbox does not gain packages merely because the Dockerfile changed.
 
 ~~~bash
-cd "$HOME/OpenShell_Config"
+cd "$HOME/openshell-kilo"
 docker build --pull -t networkwatch-kilo:dev .
 ~~~
 
@@ -74,7 +74,7 @@ The volumes persist Kilo's XDG data and Kilo configuration separately from the i
 
 ~~~bash
 export SANDBOX=networkwatch-kilo-7
-export POLICY_FILE="$HOME/OpenShell_Config/policy-v7.yaml"
+export POLICY_FILE="$HOME/openshell-kilo/policy-v7.yaml"
 
 # Create only if missing; resource admission may require operator-approved labels.
 docker volume inspect networkwatch-kilo-data >/dev/null 2>&1 || docker volume create networkwatch-kilo-data
@@ -136,7 +136,7 @@ OpenShell's effective policy can include provider-added entries in addition to p
 
 After attaching or updating credentials, open a **new sandbox shell/process**. Existing sessions need not inherit newly attached credential placeholders.
 
-The current policy scopes GitHub repository API and Git transport access to **Nick-NetwrkDef/NetworkWatch**; it does not automatically grant Kilo access to this private OpenShell_Config repository or arbitrary GitHub repositories.
+The current policy scopes GitHub repository API and Git transport access to **Nick-NetwrkDef/NetworkWatch**; it does not automatically grant Kilo access to this private openshell-kilo repository or arbitrary GitHub repositories.
 
 ## 5. Enter the sandbox and initialize the agent workspace
 
@@ -286,9 +286,9 @@ To export the current base policy into editable YAML, strip OpenShell's metadata
 ~~~bash
 openshell policy get "$SANDBOX" --base \
   | sed '1,/^---$/d' \
-  > "$HOME/OpenShell_Config/policy-export.yaml"
+  > "$HOME/openshell-kilo/policy-export.yaml"
 
-head -n 12 "$HOME/OpenShell_Config/policy-export.yaml"
+head -n 12 "$HOME/openshell-kilo/policy-export.yaml"
 ~~~
 
 Check that the exported file begins with actual policy YAML such as **version: 1**, not a metadata banner, and that it is nonempty before applying it.
@@ -297,7 +297,7 @@ After review, apply an edited base policy:
 
 ~~~bash
 openshell policy set "$SANDBOX" \
-  --policy "$HOME/OpenShell_Config/policy-v7.yaml" \
+  --policy "$HOME/openshell-kilo/policy-v7.yaml" \
   --wait
 openshell policy list "$SANDBOX"
 ~~~
