@@ -23,6 +23,12 @@ RUN mkdir -p /etc/apt/keyrings \
 # Install Kilo Code CLI
 RUN npm install -g @kilocode/cli
 
+# Install Oh My Pi (OMP)
+RUN curl -fsSL https://omp.sh/install -o /tmp/install-omp.sh \
+    && PI_INSTALL_DIR=/usr/local/bin sh /tmp/install-omp.sh --binary \
+    && rm /tmp/install-omp.sh \
+    && omp --version
+
 # Create a non-root agent user
 RUN useradd -m -s /bin/bash agent \
     && mkdir -p /sandbox/NetworkWatch \
@@ -42,6 +48,37 @@ RUN set -eu; \
       --install-dir /usr/local/aws-cli \
       --bin-dir /usr/local/bin; \
     rm -rf /tmp/awscliv2 /tmp/awscliv2.zip
+
+# Install PostgreSQL 18
+
+# PostgreSQL 18 for disposable NetworkWatch integration testing
+# Install binaries only; the agent initializes its own database at runtime.
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends postgresql-common; \
+    sed -ri 's/^[# ]*create_main_cluster[ ]*=.*/create_main_cluster = false/' \
+      /etc/postgresql-common/createcluster.conf; \
+    install -d -m 0755 /usr/share/postgresql-common/pgdg; \
+    curl -fsSL \
+      https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+      -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc; \
+    gpg --show-keys --with-colons \
+      /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+      | grep -Fq 'B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8'; \
+    printf '%s\n' \
+      'Types: deb' \
+      'URIs: https://apt.postgresql.org/pub/repos/apt' \
+      'Suites: noble-pgdg' \
+      'Components: main' \
+      'Signed-By: /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc' \
+      > /etc/apt/sources.list.d/pgdg.sources; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      postgresql-18 postgresql-client-18; \
+    rm -rf /var/lib/apt/lists/*
+
+# Make PostgreSQL administration commands available to the agent
+ENV PATH="/usr/lib/postgresql/18/bin:${PATH}"
 
 # Create a writable temporary directory for Kilo
 RUN install -d -m 700 -o agent -g agent /tmp/kilo

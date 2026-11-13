@@ -129,3 +129,19 @@ network_policies:
         access: read-only
     binaries:
       - path: /usr/lib/node_modules/@kilocode/cli/bin/.kilo
+  ocsf_access:
+    name: ocsf
+    endpoints:
+      - host: ocsf.io
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: read-only
+      - host: schema.ocsf.io
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: read-only
+    binaries:
+      - path: /usr/bin/curl
+      - path: /usr/lib/node_modules/@kilocode/cli/bin/.kilo
