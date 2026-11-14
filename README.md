@@ -1,16 +1,16 @@
-# NetworkWatch OpenShell + Kilo Development Environment
+# NetworkWatch OpenShell + Kilo / OMP Development Environment
 
-This repository contains the configuration for the **NetworkWatch AI development sandbox** on the Ubuntu dev workstation. It is for a single Kilo coding agent running under NVIDIA OpenShell, with policy-controlled network access and optional disposable PostgreSQL integration testing.
+This repository contains the configuration for the **NetworkWatch AI development sandbox** on the Ubuntu dev workstation. It supports Kilo Code and Oh My Pi (OMP) coding agents running under NVIDIA OpenShell, with policy-controlled network access and optional disposable PostgreSQL integration testing.
 
 ## Files and responsibilities
 
 | File | Purpose |
 | --- | --- |
-| [Dockerfile](Dockerfile) | Ubuntu 24.04 image with Node.js 22, Kilo CLI, Python, Git, AWS CLI, and non-root agent user |
+| [Dockerfile](Dockerfile) | Ubuntu 24.04 image with Node.js 22, Kilo and OMP CLIs, PostgreSQL 18 binaries, Python, Git, AWS CLI, and non-root agent user |
 | [policy-v7.yaml](policy-v7.yaml) | Current checked-in base OpenShell policy; scoped GitHub, npm, Python, model, and documentation endpoints |
 | [npm_registry_policy.txt](npm_registry_policy.txt) | Historical example commands for adjusting npm network access; update the sandbox name before using |
 
-**Current image status:** The checked-in Dockerfile does **not yet install PostgreSQL**. The optional section below describes how to add it and bootstrap a *separate, disposable* development database. Do not assume that PostgreSQL is present until an image including that change has been built and verified.
+**Current image status:** The checked-in Dockerfile installs PostgreSQL 18 server/client binaries, but disables automatic cluster creation. A sandbox built from this image can initialize a *separate, disposable* development database; PostgreSQL is not automatically initialized or started. Existing sandboxes must be recreated from the updated image to receive these binaries.
 
 ### Security boundaries
 
@@ -59,7 +59,7 @@ Quick image checks on the host:
 
 ~~~bash
 docker run --rm --entrypoint /bin/bash networkwatch-kilo:dev \
-  -lc 'id agent && node --version && python3 --version && git --version && kilo --version'
+  -lc 'id agent && node --version && python3 --version && git --version && kilo --version && omp --version && postgres --version'
 ~~~
 
 The current Dockerfile creates an unprivileged Linux user named **agent**. The main OpenShell workspace is **/sandbox/NetworkWatch**. The image includes a Git credential-helper definition, so repeating that configuration is normally unnecessary.
@@ -70,7 +70,7 @@ The current Dockerfile creates an unprivileged Linux user named **agent**. The m
 
 Use **one sandbox name consistently**. This example creates a new sandbox called **networkwatch-kilo-7**; change the value if the name is already in use. Do not delete a working sandbox merely to reuse its name.
 
-The volumes persist Kilo's XDG data and Kilo configuration separately from the image. Check that named volumes exist and are allowed by the gateway. Do not mount the same writable Kilo data/config volumes into two active sandboxes simultaneously.
+The volumes persist Kilo's XDG data/configuration and OMP's home state separately from the image. Check that named volumes exist and are allowed by the gateway. Do not mount the same writable agent volumes into two active sandboxes simultaneously.
 
 ~~~bash
 export SANDBOX=networkwatch-kilo-7
@@ -127,7 +127,7 @@ openshell sandbox list
 
 **Notes:**
 
-- The resource settings above are the original 2 CPU / 4 GiB baseline. If you later add PostgreSQL, check actual memory use and increase intentionally rather than weakening resource controls.
+- The example allocates 3 CPUs and 6 GiB of memory. If you initialize PostgreSQL in the sandbox, monitor actual memory use and adjust resources deliberately rather than weakening security controls.
 - The --driver-config-json mounts require driver support. If creation reports a policy/admission or volume error, inspect the gateway configuration; do not simply add privileged mounts or disable isolation.
 - Writable volume targets must be owned by **agent**. If /sandbox/NetworkWatch/.local or /sandbox/NetworkWatch/.config/kilo is not writable, fix their ownership/creation in the *Dockerfile before USER agent* or through an owner-approved volume initialization procedure, then rebuild. Do not grant Kilo host Docker access to repair them.
 - If using a remote gateway, a host-local image tag may not be visible to it. Publish a reviewed image to an authorized private registry instead.
@@ -193,8 +193,16 @@ git fetch origin
 git status --short --branch
 ~~~
 
+Use the intended feature branch/worktree for development. Do not force-switch, clean, or delete existing worktrees. Launch Kilo from the chosen repository/worktree with:
+
+~~~bash
+kilo
+~~~
+
+If Git authentication fails, verify provider readiness, a fresh process, the credential helper, and the exact allowed repository endpoint. Avoid logging token values.
+
 ## 6. Configure OMP's long-term memory
-Your persistent volume will preserve conversations even without enabling memory. However, OMP memory is disabled by default, and I found no configuration enabling it in this repository.
+Your persistent OMP volume preserves sessions even without long-term memory enabled. OMP's memory backend is disabled by default; configure it once inside a sandbox to save these settings to the mounted volume.
 
 Once inside your new sandbox:
 
@@ -204,15 +212,7 @@ omp config set mnemopi.scoping per-project
 omp config set mnemopi.noEmbeddings true
 ~~~
 
-Use the intended feature branch/worktree for development. Do not force-switch, clean, or delete existing worktrees. Launch Kilo from the chosen repository/worktree with:
-
-~~~bash
-kilo
-~~~
-
-If Git authentication fails, verify provider readiness, a fresh process, the credential helper, and the exact allowed repository endpoint. Avoid logging token values.
-
-## 6. VS Code + SSHFS access from dev-workstation
+## 7. VS Code + SSHFS access from dev-workstation
 
 These instructions expose the **sandbox's files to VS Code on the host**; they do not give Kilo host Docker or PostgreSQL access.
 
@@ -295,7 +295,7 @@ fusermount3 -u "$HOME/networkwatch-all"
 
 Do not assume a disconnected SSHFS view means sandbox files or Git history were deleted.
 
-## 7. Inspect, export, and update policy
+## 8. Inspect, export, and update policy
 
 The checked-in **policy-v7.yaml** is a **base policy**. Providers may add separate permissions to the running **effective policy**.
 
@@ -329,21 +329,17 @@ openshell policy list "$SANDBOX"
 
 Network rules are deliberately scoped. Do not expand GitHub access, allow unrestricted outbound networking, or relax Landlock simply to get a dependency download to work. Review and authorize specific missing endpoints/binaries. Use **openshell logs "$SANDBOX"** to investigate policy denials.
 
-## 8. Optional: PostgreSQL 18 development database inside Kilo
+## 9. Optional: sandbox-local PostgreSQL 18 development database
 
-**Not implemented in the checked-in Dockerfile.** The existing **host-controlled PostgreSQL 18.3 environment is intentionally separate** and must remain unchanged. This section is a plan for a new disposable database under the sandbox's **agent** user.
+The checked-in Dockerfile already installs **postgresql-18** and **postgresql-client-18** from the PostgreSQL Global Development Group's Ubuntu 24.04 (**noble-pgdg**) repository, verifies its signing key, disables automatic cluster creation, and adds `/usr/lib/postgresql/18/bin` to **PATH**. It does **not** initialize or start a database. The existing **host-controlled PostgreSQL environment is intentionally separate** and must remain unchanged.
 
-### Image change required first
+### Verify the image and initialize a disposable cluster
 
-Before **USER agent**, install **postgresql-18** and **postgresql-client-18** from the PostgreSQL Global Development Group's Ubuntu 24.04 (**noble-pgdg**) repository, verify its signing key, and disable automatic creation of a system cluster. The current Ubuntu 24.04 base packages are not sufficient to assume PostgreSQL 18 is installed.
+Build a new image from this Dockerfile and create a new sandbox to obtain PostgreSQL 18; merely updating the repository does not modify an existing sandbox. Verify the binaries and initialize a disposable database **inside the rebuilt sandbox as agent**, not root. Do **not** add a Docker socket, privileged service, host database mounts, or production secrets.
 
-Official package instructions: https://www.postgresql.org/download/linux/ubuntu/
+Official PostgreSQL package instructions: https://www.postgresql.org/download/linux/ubuntu/
 
-Add /usr/lib/postgresql/18/bin to **PATH**. Rebuild the image under a new/reviewed tag and create a **new sandbox** from that image. Do **not** add a Docker socket, privileged service, host database mounts, or production secrets.
-
-### Bootstrap after that image is installed
-
-Inside the rebuilt sandbox, run as **agent**, not root:
+Run inside the sandbox:
 
 ~~~bash
 command -v initdb
@@ -390,7 +386,7 @@ pg_ctl -D "$PGDATA" -m fast -w stop
 
 **Important:** The existing **networkwatch-db.sh**, **make db-*** targets, protected runner, sealed source archives, and host database volumes remain **owner-controlled**. Kilo must not run those host procedures simply because it now has its own PostgreSQL binaries. Do not widen replay windows or weaken application authentication just for a green integration test.
 
-## 9. Application smoke tests (sandbox)
+## 10. Application smoke tests (sandbox)
 
 From the sandbox's NetworkWatch checkout:
 
@@ -426,7 +422,7 @@ curl -i -X POST http://127.0.0.1:3003/v1/ingest/tailscale/test-endpoint \
 
 Expected: **200** with **{"status":"ok"}** for health and **401** for an unknown/disabled endpoint. **This is HTTP-boundary evidence only**, not a successful database ingestion. Full signed webhook tests require a separately configured active registration, local restricted database connection, and matching synthetic secret.
 
-## 10. Troubleshooting and maintenance
+## 11. Troubleshooting and maintenance
 
 | Symptom | Check |
 | --- | --- |
@@ -437,7 +433,7 @@ Expected: **200** with **{"status":"ok"}** for health and **401** for an unknown
 | npm audit receives 403 policy_denied | Registry access is not necessarily granted to audit endpoints; document the incomplete audit rather than claiming clean dependencies |
 | SSH/SFTP fails | Confirm sandbox is running, gateway/workspace names, OpenShell binary path, SSH host key, and ProxyCommand |
 | SSHFS Explorer appears stale | Refresh Explorer; check SSHFS mount and selected worktree |
-| PostgreSQL executable missing | Current Dockerfile has no PostgreSQL; rebuild with the separately reviewed package installation |
+| PostgreSQL executable missing | Rebuild the image from the checked-in Dockerfile, verify the running sandbox uses the updated image, and check `PATH` |
 | PostgreSQL cannot start | Check sandbox writable paths, process/shared-memory restrictions, 5432 conflicts, and memory limit before adjusting policy |
 | Host database tests needed | Use the protected owner-controlled reviewed-revision procedure in NetworkWatch, not the sandbox-local disposable database |
 
