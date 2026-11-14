@@ -103,6 +103,12 @@ openshell sandbox create \
           "source": "networkwatch-kilo-config",
           "target": "/sandbox/NetworkWatch/.config/kilo",
           "read_only": false
+        },
+        {
+          "type": "volume",
+          "source": "networkwatch-omp-data",
+          "target": "/home/agent/.omp",
+          "read_only": false
         }
       ]
     }

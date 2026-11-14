@@ -92,6 +92,11 @@ ENV HOME=/home/agent \
     XDG_DATA_HOME=/home/agent/.local/share \
     NPM_CONFIG_CACHE=/home/agent/.npm
 
+# Intialize OMP home directory
+RUN mkdir -p /home/agent/.omp/agent \
+    && chown -R agent:agent /home/agent/.omp \
+    && chmod 700 /home/agent/.omp
+
 ENV AWS_DEFAULT_REGION=us-east-2 AWS_EC2_METADATA_DISABLED=true
 
 WORKDIR /sandbox/NetworkWatch
