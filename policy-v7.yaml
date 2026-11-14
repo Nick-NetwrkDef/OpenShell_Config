@@ -26,6 +26,7 @@ network_policies:
         access: read-only
     binaries:
       - path: /usr/lib/node_modules/@kilocode/cli/bin/.kilo
+      - path: /usr/local/bin/omp
   codex_auth:
     name: codex_auth
     endpoints:
@@ -36,6 +37,7 @@ network_policies:
         access: read-write
     binaries:
       - path: /usr/lib/node_modules/@kilocode/cli/bin/.kilo
+      - path: /usr/local/bin/omp
   codex_models:
     name: codex_models
     endpoints:
@@ -46,6 +48,7 @@ network_policies:
         access: read-write
     binaries:
       - path: /usr/lib/node_modules/@kilocode/cli/bin/.kilo
+      - path: /usr/local/bin/omp
   github_repository_api:
     name: github-repository-api
     endpoints:
@@ -130,6 +133,7 @@ network_policies:
         access: read-only
     binaries:
       - path: /usr/lib/node_modules/@kilocode/cli/bin/.kilo
+      - path: /usr/local/bin/omp
   ocsf_access:
     name: ocsf
     endpoints:
@@ -146,3 +150,4 @@ network_policies:
     binaries:
       - path: /usr/bin/curl
       - path: /usr/lib/node_modules/@kilocode/cli/bin/.kilo
+      - path: /usr/local/bin/omp

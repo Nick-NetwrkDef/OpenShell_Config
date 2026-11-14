@@ -79,6 +79,11 @@ export POLICY_FILE="$HOME/openshell-kilo/policy-v7.yaml"
 # Create only if missing; resource admission may require operator-approved labels.
 docker volume inspect networkwatch-kilo-data >/dev/null 2>&1 || docker volume create networkwatch-kilo-data
 docker volume inspect networkwatch-kilo-config >/dev/null 2>&1 || docker volume create networkwatch-kilo-config
+docker volume inspect networkwatch-omp-data >/dev/null 2>&1 || \
+docker volume create \
+  --label openshell.ai/sandbox-attachable=true \
+  --label openshell.ai/sandbox-attachable-workspace=default \
+  networkwatch-omp-data
 
 openshell sandbox create \
   --name "$SANDBOX" \
@@ -186,6 +191,17 @@ git clone https://github.com/Nick-NetwrkDef/NetworkWatch.git \
 cd /sandbox/NetworkWatch/NetworkWatch
 git fetch origin
 git status --short --branch
+~~~
+
+## 6. Configure OMP's long-term memory
+Your persistent volume will preserve conversations even without enabling memory. However, OMP memory is disabled by default, and I found no configuration enabling it in this repository.
+
+Once inside your new sandbox:
+
+~~~bash
+omp config set memory.backend mnemopi
+omp config set mnemopi.scoping per-project
+omp config set mnemopi.noEmbeddings true
 ~~~
 
 Use the intended feature branch/worktree for development. Do not force-switch, clean, or delete existing worktrees. Launch Kilo from the chosen repository/worktree with:
