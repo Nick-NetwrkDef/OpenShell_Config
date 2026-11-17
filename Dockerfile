@@ -49,9 +49,9 @@ RUN set -eu; \
       --bin-dir /usr/local/bin; \
     rm -rf /tmp/awscliv2 /tmp/awscliv2.zip
 
-# Install PostgreSQL 18
+# Install PostgreSQL 18.7
 
-# PostgreSQL 18 for disposable NetworkWatch integration testing
+# PostgreSQL 18.7 for disposable NetworkWatch integration testing
 # Install binaries only; the agent initializes its own database at runtime.
 RUN set -eux; \
     apt-get update; \
@@ -74,7 +74,8 @@ RUN set -eux; \
       > /etc/apt/sources.list.d/pgdg.sources; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-      postgresql-18 postgresql-client-18; \
+      postgresql-18=18.7-1.pgdg24.04+2 \
+      postgresql-client-18=18.7-1.pgdg24.04+2; \
     rm -rf /var/lib/apt/lists/*
 
 # Make PostgreSQL administration commands available to the agent
