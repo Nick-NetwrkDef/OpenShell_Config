@@ -73,40 +73,6 @@ For manual setup, use the same image, sandbox naming pattern, and volume names d
 
 The gateway must admit the named volumes and be able to resolve the image tag. A remote gateway needs access to the image through an authorized registry.
 
-### Migrate an existing agent profile once
-
-New sandboxes mount the existing named volume at `$HOME/.omp` inside the OpenShell session. Older sandboxes mounted it at `/home/agent/.omp` while the agent saved its default profile under the workspace home. If your settings are in an older sandbox, migrate them **before stopping or retiring it**. Fresh installations can skip this section.
-
-Close the coding agent in every sandbox using the volume. In the **older sandbox that has the settings you want**, run the block below. If you have continued working from a recovered copy, run it in the shell where `PI_CODING_AGENT_DIR` points to that copy. The block stages the default profile on the volume and keeps the previous volume profile in the printed backup directory.
-
-~~~bash
-(
-  set -eu
-  volume=/home/agent/.omp
-  source_dir=${PI_CODING_AGENT_DIR:-"$HOME/.omp/agent"}
-  mountpoint -q "$volume" || { echo "Expected the old volume mount at $volume" >&2; exit 1; }
-  test -d "$source_dir" || { echo "Missing profile at $source_dir" >&2; exit 1; }
-  if [[ "$source_dir" -ef "$volume/agent" ]]; then
-    echo "The active profile is already at the volume root."
-    exit 0
-  fi
-  stage=$(mktemp -d "$volume/migration.XXXXXX")
-  cp -a -- "$source_dir" "$stage/new-agent"
-  if [[ -e "$volume/agent" ]]; then
-    mv -T -- "$volume/agent" "$stage/previous-agent"
-  fi
-  if ! mv -T -- "$stage/new-agent" "$volume/agent"; then
-    if [[ -d "$stage/previous-agent" ]]; then
-      mv -T -- "$stage/previous-agent" "$volume/agent"
-    fi
-    exit 1
-  fi
-  printf 'Migrated %s. Previous volume profile, if present: %s/previous-agent\n' "$source_dir" "$stage"
-)
-~~~
-
-Stop the older sandboxes after the copy succeeds. On the host, pull the updated repository and run `./create-sandbox.sh` with the next number. Existing sandboxes keep their original mounts. The profile can include login credentials, so keep the volume, migration backup, and SSHFS view private.
-
 ## 4. Attach the GitHub provider (host)
 
 Setup attaches the configured provider and waits for it to take effect. If the sandbox was created and attachment failed, resume here. Use the sandbox name from `openshell sandbox list` and the provider name configured in the setup script.
