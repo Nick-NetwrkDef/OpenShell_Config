@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Prepare a new NetworkWatch sandbox on the local Docker gateway host.
+# Prepare a new AI coding sandbox on the local Docker gateway host.
 set -euo pipefail
 
 repo_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -7,7 +7,7 @@ image=networkwatch-kilo:dev
 provider=networkwatch-github-rw
 volumes=(networkwatch-kilo-data networkwatch-kilo-config networkwatch-omp-data)
 
-printf 'New sandbox number (e.g. 9 for openshell-kilo-9): '
+printf 'New sandbox number (e.g. 9): '
 IFS= read -r number || { echo 'No sandbox number supplied.' >&2; exit 1; }
 if [[ ! $number =~ ^[1-9][0-9]*$ ]]; then
     echo 'Enter a positive whole number without leading zeros.' >&2

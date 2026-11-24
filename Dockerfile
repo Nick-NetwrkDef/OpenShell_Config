@@ -20,10 +20,10 @@ RUN mkdir -p /etc/apt/keyrings \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Kilo Code CLI
+# Install the npm-distributed coding agent
 RUN npm install -g @kilocode/cli
 
-# Install Oh My Pi (OMP)
+# Install the standalone coding agent
 RUN curl -fsSL https://omp.sh/install -o /tmp/install-omp.sh \
     && PI_INSTALL_DIR=/usr/local/bin sh /tmp/install-omp.sh --binary \
     && rm /tmp/install-omp.sh \
@@ -51,7 +51,7 @@ RUN set -eu; \
 
 # Install PostgreSQL 18.7
 
-# PostgreSQL 18.7 for disposable NetworkWatch integration testing
+# PostgreSQL binaries for disposable project integration tests
 # Install binaries only; the agent initializes its own database at runtime.
 RUN set -eux; \
     apt-get update; \
@@ -81,19 +81,19 @@ RUN set -eux; \
 # Make PostgreSQL administration commands available to the agent
 ENV PATH="/usr/lib/postgresql/18/bin:${PATH}"
 
-# Create a writable temporary directory for Kilo
+# Create a writable temporary directory for the coding agent
 RUN install -d -m 700 -o agent -g agent /tmp/kilo
 
 USER agent
 
-# Keep Kilo configuration separate from project files
+# Keep agent configuration separate from project files
 ENV HOME=/home/agent \
     XDG_CONFIG_HOME=/home/agent/.config \
     XDG_CACHE_HOME=/home/agent/.cache \
     XDG_DATA_HOME=/home/agent/.local/share \
     NPM_CONFIG_CACHE=/home/agent/.npm
 
-# Intialize OMP home directory
+# Initialize the standalone agent’s persistent home directory
 RUN mkdir -p /home/agent/.omp/agent \
     && chown -R agent:agent /home/agent/.omp \
     && chmod 700 /home/agent/.omp

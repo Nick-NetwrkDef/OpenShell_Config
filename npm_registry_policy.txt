@@ -1,11 +1,12 @@
-openshell policy update networkwatch-kilo \
+# On the host, set SANDBOX to the name printed by the setup script.
+openshell policy update "$SANDBOX" \
   --rule-name npm_registry \
   --binary /usr/bin/node \
   --add-endpoint registry.npmjs.org:443:read-only:rest:enforce \
   --wait
 
-Install necessary components
+# Install the required project dependencies inside the sandbox.
 
-openshell policy update networkwatch-kilo \
+openshell policy update "$SANDBOX" \
   --remove-rule npm_registry \
   --wait
