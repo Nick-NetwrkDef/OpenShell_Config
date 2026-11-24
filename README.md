@@ -393,59 +393,7 @@ psql -h /tmp -U agent -d networkwatch \
   -c "SELECT current_user, current_database(), version();"
 ~~~
 
-This initializes an **empty** local database. It does **not** apply NetworkWatch migrations or configure restricted ingestion authentication automatically. The Dockerfile pins both PostgreSQL packages to `18.7-1.pgdg24.04+2`. Verify the running image with `postgres --version`.
-
-Kilo's follow-on development tasks are to:
-
-1. Apply the migrations specified by the NetworkWatch revision under test to this *disposable* database, using a **new sandbox-only bootstrap/test path** rather than the protected host runner.
-2. Load **synthetic clients and active Tailscale registrations**; create only local synthetic signing material and restricted **nw_ingestion** credentials, never production credentials.
-3. Exercise real PostgreSQL role/forced-RLS constraints, inbox/outbox atomicity, duplicate reconciliation, rollback, and inactive integration rejection.
-4. Start the real ingestion application on sandbox **127.0.0.1:3003** and send signed synthetic webhooks to validate the complete HTTP-to-PostgreSQL path.
-5. Treat these results as **agent development tests**, not the final independent database acceptance gate.
-
-The sandbox test database must stay on **/tmp** or another explicitly authorized writable sandbox-local path, never on the SSHFS repository or protected host Docker volume. Its contents are disposable; recreating the sandbox can erase them. To stop it:
-
-~~~bash
-pg_ctl -D "$PGDATA" -m fast -w stop
-~~~
-
-**Important:** The existing **networkwatch-db.sh**, **make db-*** targets, protected runner, sealed source archives, and host database volumes remain **owner-controlled**. Kilo must not run those host procedures simply because it now has its own PostgreSQL binaries. Do not widen replay windows or weaken application authentication just for a green integration test.
-
-## 10. Application smoke tests (sandbox)
-
-From the sandbox's NetworkWatch checkout:
-
-~~~bash
-cd /sandbox/NetworkWatch/NetworkWatch
-
-npm --prefix packages/contracts ci --ignore-scripts
-npm --prefix packages/contracts run build
-
-npm --prefix packages/ingestion-persistence ci --ignore-scripts
-npm --prefix packages/ingestion-persistence run build
-
-npm --prefix apps/ingestion ci --ignore-scripts
-npm --prefix apps/ingestion run typecheck
-npm --prefix apps/ingestion test
-npm --prefix apps/ingestion run build
-~~~
-
-With **no enabled webhook endpoints**, run the local HTTP smoke test:
-
-~~~bash
-cd /sandbox/NetworkWatch/NetworkWatch/apps/ingestion
-TAILSCALE_ENDPOINTS_JSON='[]' npm start
-~~~
-
-In another sandbox shell:
-
-~~~bash
-curl -i http://127.0.0.1:3003/health/live
-curl -i -X POST http://127.0.0.1:3003/v1/ingest/tailscale/test-endpoint \
-  -H 'Content-Type: application/json' --data-binary '[]'
-~~~
-
-Expected: **200** with **{"status":"ok"}** for health and **401** for an unknown/disabled endpoint. **This is HTTP-boundary evidence only**, not a successful database ingestion. Full signed webhook tests require a separately configured active registration, local restricted database connection, and matching synthetic secret.
+This initializes an **empty** local database. The Dockerfile pins both PostgreSQL packages to `18.7-1.pgdg24.04+2`. Verify the running image with `postgres --version`.
 
 ## 11. Troubleshooting and maintenance
 
