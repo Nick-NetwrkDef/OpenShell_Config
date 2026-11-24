@@ -1,6 +1,6 @@
-# NetworkWatch OpenShell + Kilo / OMP Development Environment
+# OpenShell + AI Development Environment
 
-This public repository contains the configuration for the **NetworkWatch AI development sandbox** on the Ubuntu dev workstation. It supports Kilo Code and Oh My Pi (OMP) coding agents running under NVIDIA OpenShell, with policy-controlled network access and optional disposable PostgreSQL integration testing.
+This public repository contains the configuration for an **AI development sandbox** on the a linux workstation. It supports most coding agents running under NVIDIA OpenShell, with policy-controlled network access and optional disposable PostgreSQL integration testing.
 
 ## Files and responsibilities
 
