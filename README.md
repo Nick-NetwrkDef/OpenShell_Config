@@ -134,7 +134,7 @@ git fetch origin
 git status --short --branch
 ~~~
 
-For an existing checkout, open its directory or feature worktree. Launch your preferred installed coding agent there using its CLI command.
+Launch your coding agent from the project checkout or feature worktree where you want to edit files. On subsequent sandboxes, use the same CLI command. The creation script mounts the same named volume at `$HOME/.omp`, so the agent that uses this directory picks up its saved default profile at `$HOME/.omp/agent` automatically. Leave `PI_CODING_AGENT_DIR` unset for this workflow.
 
 If Git authentication fails, verify provider readiness, a fresh process, the credential helper, and the exact allowed repository endpoint. Avoid logging token values.
 
