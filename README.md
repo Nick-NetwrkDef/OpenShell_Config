@@ -1,30 +1,61 @@
 # NetworkWatch OpenShell + Kilo / OMP Development Environment
 
-This repository contains the configuration for the **NetworkWatch AI development sandbox** on the Ubuntu dev workstation. It supports Kilo Code and Oh My Pi (OMP) coding agents running under NVIDIA OpenShell, with policy-controlled network access and optional disposable PostgreSQL integration testing.
+This public repository contains the configuration for the **NetworkWatch AI development sandbox** on the Ubuntu dev workstation. It supports Kilo Code and Oh My Pi (OMP) coding agents running under NVIDIA OpenShell, with policy-controlled network access and optional disposable PostgreSQL integration testing.
 
 ## Files and responsibilities
 
 | File | Purpose |
 | --- | --- |
-| [Dockerfile](Dockerfile) | Ubuntu 24.04 image with Node.js 22, Kilo and OMP CLIs, PostgreSQL 18 binaries, Python, Git, AWS CLI, and non-root agent user |
+| [create-sandbox.sh](create-sandbox.sh) | Host setup for steps 1–4. Prompts for the sandbox number and prints the manual step 5 command. |
+| [Dockerfile](Dockerfile) | Ubuntu 24.04 image with Node.js 22, Kilo and OMP CLIs, PostgreSQL 18.7 binaries, Python, Git, AWS CLI, and non-root agent user |
 | [policy-v7.yaml](policy-v7.yaml) | Current checked-in base OpenShell policy; scoped GitHub, npm, Python, model, and documentation endpoints |
 | [npm_registry_policy.txt](npm_registry_policy.txt) | Historical example commands for adjusting npm network access; update the sandbox name before using |
 
-**Current image status:** The checked-in Dockerfile installs PostgreSQL 18 server/client binaries, but disables automatic cluster creation. A sandbox built from this image can initialize a *separate, disposable* development database; PostgreSQL is not automatically initialized or started. Existing sandboxes must be recreated from the updated image to receive these binaries.
+**Current image status:** The checked-in Dockerfile installs PostgreSQL 18.7 server/client binaries, but disables automatic cluster creation. A sandbox built from this image can initialize a *separate, disposable* development database; PostgreSQL is not automatically initialized or started. Existing sandboxes must be recreated from the updated image to receive these binaries.
 
 ### Security boundaries
 
 - **Inside OpenShell:** Kilo may write NetworkWatch source, use its approved network providers, run builds and ordinary tests, and (once configured) administer a *sandbox-local synthetic* PostgreSQL database.
-- **Outside OpenShell:** The existing host-controlled PostgreSQL 18.3 environment, Docker daemon/socket, protected database runner, reviewed commit archives, host database secrets, and staging/production systems remain separate. Kilo must not be given host Docker access, host sudo, or credentials for the protected database.
+- **Outside OpenShell:** The host-controlled PostgreSQL environment, Docker daemon/socket, protected database runner, reviewed commit archives, host database secrets, and staging/production systems remain separate. Kilo must not be given host Docker access, host sudo, or credentials for the protected database.
 - Keep production credentials, signing secrets, and real client data out of this repository and out of the sandbox development database.
 - Changes to this repository's Dockerfile or policy affect **newly built/recreated** sandboxes (policy changes can also be applied to a running sandbox with the CLI). Do not mistake a repository edit for a deployed configuration.
+
+## Create the next sandbox
+
+On **dev-workstation**, use the Docker daemon that backs your local OpenShell gateway. Have the `networkwatch-github-rw` provider configured in the active workspace (`default`). The checkout can live anywhere. The commands below keep the existing host directory name, `~/openshell-kilo`.
+
+For a first checkout, clone the public configuration:
+
+~~~bash
+git clone https://github.com/Nick-NetwrkDef/OpenShell_Config.git "$HOME/openshell-kilo"
+cd "$HOME/openshell-kilo"
+~~~
+
+For an existing checkout of this project, update it instead. If `origin` still points to the old `Nick-NetwrkDef/openshell-kilo.git` repository, run the commented command once before pulling.
+
+~~~bash
+cd "$HOME/openshell-kilo"
+git remote -v
+# git remote set-url origin https://github.com/Nick-NetwrkDef/OpenShell_Config.git
+git pull --ff-only
+~~~
+
+Run the setup from the checkout:
+
+~~~bash
+./create-sandbox.sh
+~~~
+
+Enter **9** to create **openshell-kilo-9**. The script checks the host, builds and tests the image, creates a detached sandbox, attaches the GitHub provider, and displays the effective policy. The three agent volumes are shared across generations. If the previous sandbox is still using one, the script identifies the container and exits. Preserve your work and stop the previous sandbox before retrying.
+
+When setup succeeds, copy the two commands it prints to select and enter your sandbox and continue at **step 5**. If the sandbox was created but provider attachment failed, set `SANDBOX` to its name and resume at **step 4**. Steps 1–4 below are also available for manual setup.
 
 ## 1. Host prerequisites
 
 Run host commands on **dev-workstation** as the normal Ubuntu operator, not inside Kilo.
 
 - Docker Engine and a working OpenShell gateway, with the OpenShell CLI installed.
-- Git access to this private repository and to the NetworkWatch repository as appropriate.
+- Git to clone the public OpenShell_Config repository over HTTPS. The separate NetworkWatch checkout in step 5 uses the attached GitHub provider.
 - Ubuntu host SSH/SFTP and SSHFS for VS Code's mounted-directory workflow.
 - A GitHub credential provider named **networkwatch-github-rw**, configured separately through OpenShell.
 - If using named Docker volumes through **--driver-config-json**, the gateway/driver must permit that driver configuration and admit those volumes. Some OpenShell versions require explicit operator authorization/labels. Do not bypass resource admission.
@@ -37,14 +68,7 @@ openshell sandbox list
 openshell provider list
 ~~~
 
-Clone or update this private configuration repository on the **host**, using the host's authorized GitHub credentials:
-
-~~~bash
-git clone https://github.com/Nick-NetwrkDef/openshell-kilo.git "$HOME/openshell-kilo"
-cd "$HOME/openshell-kilo"
-~~~
-
-If already cloned, use git pull instead of cloning a second copy. Review Dockerfile and policy-v7.yaml before building or applying them.
+Use the host checkout from the instructions above. Review the Dockerfile and policy-v7.yaml before building.
 
 ## 2. Build a new sandbox image (host)
 
@@ -59,7 +83,7 @@ Quick image checks on the host:
 
 ~~~bash
 docker run --rm --entrypoint /bin/bash networkwatch-kilo:dev \
-  -lc 'id agent && node --version && python3 --version && git --version && kilo --version && omp --version && postgres --version'
+  -c 'id agent && node --version && python3 --version && git --version && kilo --version && omp --version && postgres --version'
 ~~~
 
 The current Dockerfile creates an unprivileged Linux user named **agent**. The main OpenShell workspace is **/sandbox/NetworkWatch**. The image includes a Git credential-helper definition, so repeating that configuration is normally unnecessary.
@@ -68,22 +92,21 @@ The current Dockerfile creates an unprivileged Linux user named **agent**. The m
 
 ## 3. Create a Kilo sandbox (host)
 
-Use **one sandbox name consistently**. This example creates a new sandbox called **networkwatch-kilo-7**; change the value if the name is already in use. Do not delete a working sandbox merely to reuse its name.
+Use **one sandbox name consistently**. This example creates a new sandbox called **openshell-kilo-9**; change the value if the name is already in use. Do not delete a working sandbox merely to reuse its name.
 
 The volumes persist Kilo's XDG data/configuration and OMP's home state separately from the image. Check that named volumes exist and are allowed by the gateway. Do not mount the same writable agent volumes into two active sandboxes simultaneously.
 
 ~~~bash
-export SANDBOX=networkwatch-kilo-7
+export SANDBOX=openshell-kilo-9
 export POLICY_FILE="$HOME/openshell-kilo/policy-v7.yaml"
 
-# Create only if missing; resource admission may require operator-approved labels.
-docker volume inspect networkwatch-kilo-data >/dev/null 2>&1 || docker volume create networkwatch-kilo-data
-docker volume inspect networkwatch-kilo-config >/dev/null 2>&1 || docker volume create networkwatch-kilo-config
-docker volume inspect networkwatch-omp-data >/dev/null 2>&1 || \
-docker volume create \
-  --label openshell.ai/sandbox-attachable=true \
-  --label openshell.ai/sandbox-attachable-workspace=default \
-  networkwatch-omp-data
+# Create any missing volumes for the default workspace.
+for volume in networkwatch-kilo-data networkwatch-kilo-config networkwatch-omp-data; do
+  docker volume inspect "$volume" >/dev/null 2>&1 || docker volume create \
+    --label openshell.ai/sandbox-attachable=true \
+    --label openshell.ai/sandbox-attachable-workspace=default \
+    "$volume"
+done
 
 openshell sandbox create \
   --name "$SANDBOX" \
@@ -147,15 +170,16 @@ OpenShell's effective policy can include provider-added entries in addition to p
 
 After attaching or updating credentials, open a **new sandbox shell/process**. Existing sessions need not inherit newly attached credential placeholders.
 
-The current policy scopes GitHub repository API and Git transport access to **Nick-NetwrkDef/NetworkWatch**; it does not automatically grant Kilo access to this private openshell-kilo repository or arbitrary GitHub repositories.
+The checked-in base policy scopes GitHub repository API and Git transport access to **Nick-NetwrkDef/NetworkWatch**. Public visibility lets you clone **OpenShell_Config** on the host without GitHub credentials. Inside the sandbox, the effective OpenShell policy still governs GitHub access.
 
 ## 5. Enter the sandbox and initialize the agent workspace
 
-From the host:
+From the host, use the name you created (shown here for sandbox 9):
 
 ~~~bash
+export SANDBOX=openshell-kilo-9
 openshell sandbox exec \
-  -n networkwatch-kilo-7 \
+  -n "$SANDBOX" \
   --tty \
   -- /bin/bash -l
 ~~~
@@ -172,6 +196,7 @@ printf 'HOME=%s\nXDG_CONFIG_HOME=%s\nXDG_DATA_HOME=%s\nXDG_STATE_HOME=%s\n' \
   "$HOME" "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_STATE_HOME"
 test -w /sandbox/NetworkWatch/.local
 test -w /sandbox/NetworkWatch/.config/kilo
+test -w /home/agent/.omp
 ~~~
 
 The Dockerfile already configures the GitHub credential helper globally for **agent**. If inspecting a reused image reveals it is missing, recreate the helper **inside the sandbox** as follows; do not enter or log the token itself:
@@ -227,9 +252,9 @@ command -v openshell
 Edit **~/.ssh/config** on the host. Keep the same sandbox name everywhere. The ProxyCommand path below assumes **openshell** is installed at **/usr/bin/openshell**; replace it with the path printed by command -v openshell when different.
 
 ~~~sshconfig
-Host openshell-networkwatch-kilo-7.default
+Host openshell-kilo-9.default
     User sandbox
-    ProxyCommand /usr/bin/openshell ssh-proxy --gateway-name openshell --name networkwatch-kilo-7 --workspace default
+    ProxyCommand /usr/bin/openshell ssh-proxy --gateway-name openshell --name openshell-kilo-9 --workspace default
     ServerAliveInterval 15
     ServerAliveCountMax 3
     StrictHostKeyChecking ask
@@ -240,7 +265,7 @@ The gateway name **openshell** and workspace **default** are the original values
 Test SFTP **from the host**:
 
 ~~~bash
-sftp openshell-networkwatch-kilo-7.default
+sftp openshell-kilo-9.default
 ~~~
 
 Within SFTP:
@@ -259,7 +284,7 @@ mkdir -p "$HOME/networkwatch-all"
 mountpoint -q "$HOME/networkwatch-all" && echo 'Already mounted; inspect before proceeding'
 
 sshfs \
-  openshell-networkwatch-kilo-7.default:/sandbox/NetworkWatch \
+  openshell-kilo-9.default:/sandbox/NetworkWatch \
   "$HOME/networkwatch-all" \
   -o reconnect,ServerAliveInterval=15,ServerAliveCountMax=3
 ~~~
@@ -368,11 +393,11 @@ psql -h /tmp -U agent -d networkwatch \
   -c "SELECT current_user, current_database(), version();"
 ~~~
 
-This initializes an **empty** local database. It does **not** apply NetworkWatch migrations or configure restricted ingestion authentication automatically. The version installed by an unpinned postgresql-18 package may be a later 18.x minor than the protected host's 18.3; record the version and pin it separately if exact parity is required.
+This initializes an **empty** local database. It does **not** apply NetworkWatch migrations or configure restricted ingestion authentication automatically. The Dockerfile pins both PostgreSQL packages to `18.7-1.pgdg24.04+2`. Verify the running image with `postgres --version`.
 
 Kilo's follow-on development tasks are to:
 
-1. Apply NetworkWatch's intended migrations through **037** to this *disposable* database, using a **new sandbox-only bootstrap/test path** rather than the protected host runner.
+1. Apply the migrations specified by the NetworkWatch revision under test to this *disposable* database, using a **new sandbox-only bootstrap/test path** rather than the protected host runner.
 2. Load **synthetic clients and active Tailscale registrations**; create only local synthetic signing material and restricted **nw_ingestion** credentials, never production credentials.
 3. Exercise real PostgreSQL role/forced-RLS constraints, inbox/outbox atomicity, duplicate reconciliation, rollback, and inactive integration rejection.
 4. Start the real ingestion application on sandbox **127.0.0.1:3003** and send signed synthetic webhooks to validate the complete HTTP-to-PostgreSQL path.

@@ -31,7 +31,7 @@ RUN curl -fsSL https://omp.sh/install -o /tmp/install-omp.sh \
 
 # Create a non-root agent user
 RUN useradd -m -s /bin/bash agent \
-    && mkdir -p /sandbox/NetworkWatch \
+    && mkdir -p /sandbox/NetworkWatch/.local /sandbox/NetworkWatch/.config/kilo \
     && chown -R agent:agent /sandbox /home/agent
 
 # Install AWS CLI v2
