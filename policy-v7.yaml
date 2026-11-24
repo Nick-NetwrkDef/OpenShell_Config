@@ -12,7 +12,7 @@ filesystem_policy:
   read_write:
     - /tmp
     - /dev/null
-    - /home/agent/.omp
+    - /sandbox/NetworkWatch/.omp
 landlock:
   compatibility: best_effort
 network_policies:

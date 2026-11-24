@@ -73,7 +73,7 @@ openshell sandbox create \
         "mounts": [
           {"type":"volume","source":"networkwatch-kilo-data","target":"/sandbox/NetworkWatch/.local","read_only":false},
           {"type":"volume","source":"networkwatch-kilo-config","target":"/sandbox/NetworkWatch/.config/kilo","read_only":false},
-          {"type":"volume","source":"networkwatch-omp-data","target":"/home/agent/.omp","read_only":false}
+          {"type":"volume","source":"networkwatch-omp-data","target":"/sandbox/NetworkWatch/.omp","read_only":false}
         ]
       }
     }' \

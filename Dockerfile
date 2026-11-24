@@ -94,9 +94,8 @@ ENV HOME=/home/agent \
     NPM_CONFIG_CACHE=/home/agent/.npm
 
 # Initialize the standalone agent’s persistent home directory
-RUN mkdir -p /home/agent/.omp/agent \
-    && chown -R agent:agent /home/agent/.omp \
-    && chmod 700 /home/agent/.omp
+RUN mkdir -p /sandbox/NetworkWatch/.omp/agent \
+    && chmod 700 /sandbox/NetworkWatch/.omp
 
 ENV AWS_DEFAULT_REGION=us-east-2 AWS_EC2_METADATA_DISABLED=true
 
